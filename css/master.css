@@ -3,7 +3,7 @@
 /* Text inside these asterisks and slashes are comments for human */
 
   a {
-    color: cyan;
+    color: rgb(158, 18, 223);
     text-decoration: none; /* This means we do not want hyperlinks to be underlined */
   }
 
@@ -24,7 +24,7 @@
     margin-left: 10%;
 	  margin-right: 10%;
 	  border:solid;
-	  border-radius: 10PX;
+	  border-radius: 10px;
 	  padding-bottom: 10px;
   }
 
@@ -40,7 +40,8 @@
    }
 
   h2 {
-    color: lightgoldenrodyellow;
+    text-decoration: underline;
+    color: rgb(39, 212, 160);
     margin-top: 2.5rem;
     margin-bottom: 2.5rem;
    }
@@ -81,6 +82,7 @@
 
   #banner{
     padding-top : 20px; 
+    border-radius: 20px;
   }
 
   footer{
@@ -92,6 +94,11 @@
   }
 
   .profilepic{
-    border: blanchedalmond;
-    border-radius: 30px;
+    border: black;
+    border-radius: 10px;
+    border-width: 2px;
+  }
+
+  li{
+    font-size: 80%;
   }
