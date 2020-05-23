@@ -34,13 +34,13 @@
   }
 
   h1 {
-    color:whitesmoke;
+    color:orange;
     margin-bottom: 0.5rem;
     margin-top: 3rem;
    }
 
   h2 {
-    color: seagreen;
+    color: lightgoldenrodyellow;
     margin-top: 2.5rem;
     margin-bottom: 2.5rem;
    }
@@ -89,4 +89,9 @@
 
   #profile{
     padding-top: 10px;
+  }
+
+  .profilepic{
+    border: blanchedalmond;
+    border-radius: 30px;
   }
