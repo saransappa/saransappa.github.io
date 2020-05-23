@@ -3,7 +3,7 @@
 /* Text inside these asterisks and slashes are comments for human */
 
   a {
-    color:blue;
+    color: cyan;
     text-decoration: none; /* This means we do not want hyperlinks to be underlined */
   }
 
@@ -19,6 +19,7 @@
  }
 
   div{
+    background-image: url('https://i.imgur.com/7Prf6.jpg');
     background-color: #111111;
     margin-left: 10%;
 	  margin-right: 10%;
@@ -68,7 +69,7 @@
   }
 
   ul {
-    color: fuchsia; 
+    color: rgb(200, 226, 84); 
     display: table;
     margin: 0 auto;
     text-align: left;
@@ -84,4 +85,8 @@
 
   footer{
     color : whitesmoke;
+  }
+
+  #profile{
+    padding-top: 10px;
   }
