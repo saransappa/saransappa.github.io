@@ -1,0 +1,191 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+!--  taken from https://github.com/johan/js-deflate -->
+<script src="rawdeflate.js"></script>
+<script src="plantuml.js" type="text/javascript"></script>
+<script type="text/javascript" src="papaparse.min.js"></script>
+<script>
+$ = function(id){ return document.getElementById(id) };
+
+function encode64(data) {
+	r = "";
+	for (i=0; i<data.length; i+=3) {
+ 		if (i+2==data.length) {
+			r +=append3bytes(data.charCodeAt(i), data.charCodeAt(i+1), 0);
+		} else if (i+1==data.length) {
+			r += append3bytes(data.charCodeAt(i), 0, 0);
+		} else {
+			r += append3bytes(data.charCodeAt(i), data.charCodeAt(i+1),
+				data.charCodeAt(i+2));
+		}
+	}
+	return r;
+	alert(r);
+}
+
+function append3bytes(b1, b2, b3) {
+	c1 = b1 >> 2;
+	c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
+	c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
+	c4 = b3 & 0x3F;
+	r = "";
+	r += encode6bit(c1 & 0x3F);
+	r += encode6bit(c2 & 0x3F);
+	r += encode6bit(c3 & 0x3F);
+	r += encode6bit(c4 & 0x3F);
+	return r;
+}
+
+function encode6bit(b) {
+	if (b < 10) {
+ 		return String.fromCharCode(48 + b);
+	}
+	b -= 10;
+	if (b < 26) {
+ 		return String.fromCharCode(65 + b);
+	}
+	b -= 26;
+	if (b < 26) {
+ 		return String.fromCharCode(97 + b);
+	}
+	b -= 26;
+	if (b == 0) {
+ 		return '-';
+	}
+	if (b == 1) {
+ 		return '_';
+	}
+	return '?';
+}
+
+function compress(s) {
+  //UTF8
+  s = unescape(encodeURIComponent(s));
+  //$('im').src = "http://www.plantuml.com/plantuml/img/"+encode64(zip_deflate(s, 9));
+  $('im').src = "http://www.plantuml.com/plantuml/img/"+encode64(deflate(s, 9));
+}
+</script>
+<script type="text/javascript">
+    function read (){
+
+        Papa.parse(document.getElementById('csv').files[0], {
+            download: true,
+            header: true,
+            complete: function(results) {
+                var i = 0;
+                const attributes = new Set();
+                while(1){
+                    try{
+                        if(results.data[i]["System Start"]== "Field Write"){
+                            //console.log(results.data[i]);
+                            var k = results.data[i][""].split("=")[1] + "->"+results.data[i].__parsed_extra[0].split("=")[0];
+                            attributes.add(k);
+                            //console.log(k);
+                        }
+                        i++;
+                    }
+                    catch{
+                        break
+                    }
+                }
+                console.log(attributes);
+                var array_attributes = Array.from(attributes);
+                var select1 = document.getElementById("select1");
+                
+                for (var i = 0; i < array_attributes.length; i++) {
+                    var o = document.createElement("option");
+                    o.value = array_attributes[i];
+                    o.text = array_attributes[i];
+                    select1.appendChild(o);
+                }
+            }
+        });
+    };
+
+    function read2 (){
+
+        Papa.parse(document.getElementById('csv').files[0], {
+            download: true,
+            header: true,
+            complete: function(results) {
+                var i = 0;
+                var output = "@startuml\n\nhide empty description\n[*]";
+                var states = new Set();
+                var transitions = new Set();
+                var curr_state = "";
+                var keyAttribute = document.getElementById("select1").value;
+                while(1){
+                    try{
+                        if(results.data[i]["System Start"]== "Field Write"){
+                            var k = results.data[i][""].split("=")[1] + "->"+results.data[i].__parsed_extra[0].split("=")[0];
+                            if(k==keyAttribute){
+                                var temp =results.data[i].__parsed_extra[0].split("=")[1]
+                                console.log(temp);
+                                if(states.length==0){
+                                    output+=(" --> "+temp+"\n");
+                                    curr_state = temp;
+                                    states.add(temp);
+                                }
+                                else if(states.has(temp)){
+                                    var transit = (curr_state+" -> "+temp+"\n"); 
+                                    if(!transitions.has(transit)){
+                                        output+=transit;
+                                        transitions.add(transit);
+                                    }
+                                    curr_state = temp;
+                                }
+                                else{
+                                    var transit = (curr_state+" -> "+temp+"\n"); 
+                                    if(!transitions.has(transit)){
+                                        output+=transit;
+                                        transitions.add(transit);
+                                    }
+                                    curr_state = temp;
+                                    states.add(temp);
+                                }
+                            }
+                        }
+                        i++;
+                    }
+                    catch{
+                        break
+                    }
+                }
+                output+="\n@enduml";
+                document.getElementById("inflated").value = output;
+                /*
+                let i = 0;
+                results.data.map((data, index)=> {
+                    if (i === 0) {
+                        let table = document.getElementById('tbl-data');
+                        generateTableHead(table, data);
+                    } else {
+                        let table = document.getElementById('tbl-data');
+                        generateTableRows(table, data);
+                    }
+                    i++;
+                });
+                */
+            }
+        });
+    };
+
+</script>
+</head>
+
+<body>
+<form>
+<input type="file" multiple="false" accept="*test/csv" id="csv" onchange="process()">
+	<textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
+<p>
+<input type=submit value = "Upload" onclick="read();return false;"></p>
+<select id="select1"></select>
+<input type=submit value = "Trace" onclick="read2();return false;"></p>
+<input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
+
+<img id="im" src="" alt="No image">
+</form>
+
+</body>
+</html>
