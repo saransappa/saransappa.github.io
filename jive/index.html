@@ -141,16 +141,10 @@ function compress(s) {
                                     next_state = temp;
                                 }
                                 else{
-                                    //console.log("Saran")
-                                    
                                     const temp_arr = curr_state.split("_");
                                     var attribute_index = keyAttributes.indexOf(k);
-                                    //console.log("attr_ind = "+attribute_index)
-                                    //console.log(temp_arr);
                                     temp_arr[attribute_index] = temp;
-                                    //console.log(temp_arr)
                                     next_state = temp_arr.join("_");
-                                    
                                 }
                                 console.log(curr_state);
                                 console.log(next_state);
@@ -186,8 +180,13 @@ function compress(s) {
         document.getElementById("key_attributes").value += (document.getElementById("select1").value)+";";
     };
 
-    function clear_uml(){
+    function clear_uml_and_key_attributes(){
         document.getElementById("inflated").value = "";
+        document.getElementById("key_attributes").value = "";
+        var select1 = document.getElementById("select1");
+        while(select1.length>0){
+            select1.remove(0);
+        }
     };
 </script>
 </head>
@@ -196,7 +195,7 @@ function compress(s) {
     <center>
         <h1>State Diagram Builder from Execution Trace</h1>
         <form>
-            <input type="file" multiple="false" accept="*test/csv" id="csv" onchange="clear_uml()">
+            <input type="file" multiple="false" accept="*test/csv" id="csv" onchange="clear_uml_and_key_attributes()">
             <br><br><br>
             <textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
             <p>
@@ -209,7 +208,7 @@ function compress(s) {
             <input type=submit value = "Trace" onclick="trace();return false;"></p>
             <input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
             
-            <img id="im" src="" alt="No image">
+            <img id="im" src="" alt="Here Comes the State Diagram">
             </form>            
     </center>
 </body>
