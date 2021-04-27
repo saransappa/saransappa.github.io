@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-!--  taken from https://github.com/johan/js-deflate -->
+<!--  taken from https://github.com/johan/js-deflate -->
 <script src="rawdeflate.js"></script>
 <script src="plantuml.js" type="text/javascript"></script>
 <script type="text/javascript" src="papaparse.min.js"></script>
@@ -92,7 +92,9 @@ function compress(s) {
                 console.log(attributes);
                 var array_attributes = Array.from(attributes);
                 var select1 = document.getElementById("select1");
-                
+                while(select1.length>0){
+                    select1.remove(0);
+                }
                 for (var i = 0; i < array_attributes.length; i++) {
                     var o = document.createElement("option");
                     o.value = array_attributes[i];
@@ -103,46 +105,68 @@ function compress(s) {
         });
     };
 
-    function read2 (){
+    function trace(){
 
         Papa.parse(document.getElementById('csv').files[0], {
             download: true,
             header: true,
             complete: function(results) {
                 var i = 0;
-                var output = "@startuml\n\nhide empty description\n[*]";
+                var output = "@startuml\n\nhide empty description\n";
                 var states = new Set();
                 var transitions = new Set();
                 var curr_state = "";
-                var keyAttribute = document.getElementById("select1").value;
+                var keyAttributes = document.getElementById("key_attributes").value.split(";");
+                keyAttributes.pop();
+                for(i=0;i<keyAttributes.length;i++){
+                    if(i==keyAttributes.length-1)curr_state+="null";
+                    else curr_state+="null_";
+                }
+                output+=("[*] -> "+curr_state+"\n");
+                states.add(curr_state);
+                var count = 0;
+                console.log(keyAttributes);
                 while(1){
                     try{
                         if(results.data[i]["System Start"]== "Field Write"){
                             var k = results.data[i][""].split("=")[1] + "->"+results.data[i].__parsed_extra[0].split("=")[0];
-                            if(k==keyAttribute){
-                                var temp =results.data[i].__parsed_extra[0].split("=")[1]
-                                console.log(temp);
-                                if(states.length==0){
-                                    output+=(" --> "+temp+"\n");
-                                    curr_state = temp;
-                                    states.add(temp);
-                                }
-                                else if(states.has(temp)){
-                                    var transit = (curr_state+" -> "+temp+"\n"); 
-                                    if(!transitions.has(transit)){
-                                        output+=transit;
-                                        transitions.add(transit);
-                                    }
-                                    curr_state = temp;
+                            count+=1;
+                            if(keyAttributes.includes(k)){
+                                console.log(k+" "+keyAttributes.indexOf(k) );
+                                var temp =results.data[i].__parsed_extra[0].split("=")[1];
+                                
+                                var next_state = "";
+                               
+                                if(keyAttributes.length==1){
+                                    next_state = temp;
                                 }
                                 else{
-                                    var transit = (curr_state+" -> "+temp+"\n"); 
-                                    if(!transitions.has(transit)){
-                                        output+=transit;
-                                        transitions.add(transit);
-                                    }
-                                    curr_state = temp;
-                                    states.add(temp);
+                                    //console.log("Saran")
+                                    
+                                    const temp_arr = curr_state.split("_");
+                                    var attribute_index = keyAttributes.indexOf(k);
+                                    //console.log("attr_ind = "+attribute_index)
+                                    //console.log(temp_arr);
+                                    temp_arr[attribute_index] = temp;
+                                    //console.log(temp_arr)
+                                    next_state = temp_arr.join("_");
+                                    
+                                }
+                                console.log(curr_state);
+                                console.log(next_state);
+                                
+                                var transit = (curr_state+" -> "+next_state+"\n"); 
+                                console.log(transit);
+                                if(!transitions.has(transit)){
+                                    output+=transit;
+                                    transitions.add(transit);
+                                }
+                                if(states.has(temp)){ 
+                                    curr_state = next_state;
+                                }
+                                else{
+                                    curr_state = next_state;
+                                    states.add(next_state);
                                 }
                             }
                         }
@@ -152,40 +176,41 @@ function compress(s) {
                         break
                     }
                 }
+                //console.log(count);
                 output+="\n@enduml";
                 document.getElementById("inflated").value = output;
-                /*
-                let i = 0;
-                results.data.map((data, index)=> {
-                    if (i === 0) {
-                        let table = document.getElementById('tbl-data');
-                        generateTableHead(table, data);
-                    } else {
-                        let table = document.getElementById('tbl-data');
-                        generateTableRows(table, data);
-                    }
-                    i++;
-                });
-                */
             }
         });
     };
+    function add_key_attr(){
+        document.getElementById("key_attributes").value += (document.getElementById("select1").value)+";";
+    };
 
+    function clear_uml(){
+        document.getElementById("inflated").value = "";
+    };
 </script>
 </head>
 
 <body>
-<form>
-<input type="file" multiple="false" accept="*test/csv" id="csv" onchange="process()">
-	<textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
-<p>
-<input type=submit value = "Upload" onclick="read();return false;"></p>
-<select id="select1"></select>
-<input type=submit value = "Trace" onclick="read2();return false;"></p>
-<input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
-
-<img id="im" src="" alt="No image">
-</form>
-
+    <center>
+        <h1>State Diagram Builder from Execution Trace</h1>
+        <form>
+            <input type="file" multiple="false" accept="*test/csv" id="csv" onchange="clear_uml()">
+            <br><br><br>
+            <textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
+            <p>
+            <input type=submit value = "Upload" onclick="read();return false;"></p>
+            Attributes: <select id="select1"></select>
+            <input type=submit value = "Add" onclick="add_key_attr();return false;"></p>
+            
+            Key Attributes: <input type="text" id="key_attributes">
+            
+            <input type=submit value = "Trace" onclick="trace();return false;"></p>
+            <input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
+            
+            <img id="im" src="" alt="No image">
+            </form>            
+    </center>
 </body>
 </html>
