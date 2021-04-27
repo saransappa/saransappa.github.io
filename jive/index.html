@@ -122,15 +122,15 @@ function compress(s) {
                     if(i==keyAttributes.length-1)curr_state+="null";
                     else curr_state+="null_";
                 }
-                output+=("[*] -> "+curr_state+"\n");
+                output+=("[*] --> "+curr_state+"\n");
                 states.add(curr_state);
-                var count = 0;
+                var transition_count = 0;
                 console.log(keyAttributes);
                 while(1){
                     try{
                         if(results.data[i]["System Start"]== "Field Write"){
                             var k = results.data[i][""].split("=")[1] + "->"+results.data[i].__parsed_extra[0].split("=")[0];
-                            count+=1;
+                            
                             if(keyAttributes.includes(k)){
                                 console.log(k+" "+keyAttributes.indexOf(k) );
                                 var temp =results.data[i].__parsed_extra[0].split("=")[1];
@@ -149,10 +149,17 @@ function compress(s) {
                                 console.log(curr_state);
                                 console.log(next_state);
                                 
-                                var transit = (curr_state+" -> "+next_state+"\n"); 
+                                var transit = (curr_state+" --> "+next_state+"\n"); 
                                 console.log(transit);
                                 if(!transitions.has(transit)){
-                                    output+=transit;
+                                    transition_count+=1;
+                                    if(transition_count%2==0){
+                                        var temp_transit = transit.replace("--","-");
+                                        output+=temp_transit;
+                                    }
+                                    else{
+                                        output+=transit;
+                                    }
                                     transitions.add(transit);
                                 }
                                 if(states.has(temp)){ 
@@ -170,7 +177,6 @@ function compress(s) {
                         break
                     }
                 }
-                //console.log(count);
                 output+="\n@enduml";
                 document.getElementById("inflated").value = output;
             }
@@ -195,19 +201,23 @@ function compress(s) {
     <center>
         <h1>State Diagram Builder from Execution Trace</h1>
         <form>
+            <p>Choose a CSV file</p>
             <input type="file" multiple="false" accept="*test/csv" id="csv" onchange="clear_uml_and_key_attributes()">
-            <br><br><br>
-            <textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
+            <br>
             <p>
             <input type=submit value = "Upload" onclick="read();return false;"></p>
             Attributes: <select id="select1"></select>
             <input type=submit value = "Add" onclick="add_key_attr();return false;"></p>
             
-            Key Attributes: <input type="text" id="key_attributes">
-            
+            Key Attributes: <textarea id="key_attributes" cols="40" rows="5"></textarea>
+            <br>
             <input type=submit value = "Trace" onclick="trace();return false;"></p>
-            <input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
             
+            <br><br>
+            <textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
+            <br><br>
+            <input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
+
             <img id="im" src="" alt="Here Comes the State Diagram">
             </form>            
     </center>
