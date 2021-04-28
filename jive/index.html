@@ -71,17 +71,18 @@ function compress(s) {
 
         Papa.parse(document.getElementById('csv').files[0], {
             download: true,
-            header: true,
+            header: false,
             complete: function(results) {
                 var i = 0;
+                var field_write_count = 0;
                 const attributes = new Set();
                 while(1){
                     try{
-                        if(results.data[i]["System Start"]== "Field Write"){
-                            //console.log(results.data[i]);
-                            var k = results.data[i][""].split("=")[1] + "->"+results.data[i].__parsed_extra[0].split("=")[0];
+                        if(results.data[i][3].includes("Field Write")){
+                            field_write_count+=1;
+                            var k = results.data[i][4].split("=")[1] + "->"+results.data[i][5].split("=")[0];
+                            k = k.replace("\"","");
                             attributes.add(k);
-                            //console.log(k);
                         }
                         i++;
                     }
@@ -89,7 +90,7 @@ function compress(s) {
                         break
                     }
                 }
-                console.log(attributes);
+                if(field_write_count==0)alert("No FIELD WRITE actions. State Diagram can't be built!");
                 var array_attributes = Array.from(attributes);
                 var select1 = document.getElementById("select1");
                 while(select1.length>0){
@@ -109,57 +110,46 @@ function compress(s) {
 
         Papa.parse(document.getElementById('csv').files[0], {
             download: true,
-            header: true,
+            header: false,
             complete: function(results) {
                 var i = 0;
                 var output = "@startuml\n\nhide empty description\n";
                 var states = new Set();
                 var transitions = new Set();
                 var curr_state = "";
-                var keyAttributes = document.getElementById("key_attributes").value.split(";");
-                keyAttributes.pop();
+                var keyAttributesUnfiltered = document.getElementById("key_attributes").value.split(";");
+                keyAttributesUnfiltered.pop();
+                var temp_set = new Set(keyAttributesUnfiltered);
+                var keyAttributes = Array.from(temp_set);
+                
                 for(i=0;i<keyAttributes.length;i++){
                     if(i==keyAttributes.length-1)curr_state+="null";
-                    else curr_state+="null_";
+                    else curr_state+="null ";
                 }
-                output+=("[*] --> "+curr_state+"\n");
                 states.add(curr_state);
-                var transition_count = 0;
-                console.log(keyAttributes);
+                //console.log(keyAttributes);
                 while(1){
                     try{
-                        if(results.data[i]["System Start"]== "Field Write"){
-                            var k = results.data[i][""].split("=")[1] + "->"+results.data[i].__parsed_extra[0].split("=")[0];
-                            
+                        if(results.data[i][3].includes("Field Write")){
+                            var k = results.data[i][4].split("=")[1] + "->"+results.data[i][5].split("=")[0];
+                            k = k.replace('"',"");
                             if(keyAttributes.includes(k)){
-                                console.log(k+" "+keyAttributes.indexOf(k) );
-                                var temp =results.data[i].__parsed_extra[0].split("=")[1];
-                                
+                                var temp =results.data[i][5].split(/=(.+)/)[1];
+                                temp = temp.split('"').join("");
+                                temp = temp.split(' ').join("");
                                 var next_state = "";
-                               
                                 if(keyAttributes.length==1){
                                     next_state = temp;
                                 }
                                 else{
-                                    const temp_arr = curr_state.split("_");
+                                    const temp_arr = curr_state.split(" ");
                                     var attribute_index = keyAttributes.indexOf(k);
                                     temp_arr[attribute_index] = temp;
-                                    next_state = temp_arr.join("_");
+                                    next_state = temp_arr.join(" ");
                                 }
-                                console.log(curr_state);
-                                console.log(next_state);
-                                
                                 var transit = (curr_state+" --> "+next_state+"\n"); 
-                                console.log(transit);
                                 if(!transitions.has(transit)){
-                                    transition_count+=1;
-                                    if(transition_count%2==0){
-                                        var temp_transit = transit.replace("--","-");
-                                        output+=temp_transit;
-                                    }
-                                    else{
-                                        output+=transit;
-                                    }
+                                    
                                     transitions.add(transit);
                                 }
                                 if(states.has(temp)){ 
@@ -168,6 +158,7 @@ function compress(s) {
                                 else{
                                     curr_state = next_state;
                                     states.add(next_state);
+                                    //console.log(states);
                                 }
                             }
                         }
@@ -177,9 +168,31 @@ function compress(s) {
                         break
                     }
                 }
+                var state_arr = Array.from(states);
+                const transit_arr = Array.from(transitions);
+                var new_transit = [];
+                for(i=0;i<transit_arr.length;i++){
+                    var x = transit_arr[i].split(" --> ");
+                    var a = state_arr.indexOf(x[0]);
+                    var b = state_arr.indexOf(x[1].replace("\n",""));
+                    new_transit.push(a.toString() + " --> "+b.toString());
+                }
+                for(i = 0;i<state_arr.length;i++){
+                    output+=("state \""+state_arr[i]+"\" as "+i+"\n");
+                }
+                for(i = 0;i<new_transit.length;i++){
+                    /*
+                        Horizontal growth for even number transition 
+                        Vertical growth for odd number transition 
+                    */
+                    if(i%2==0)output+=(new_transit[i].replace("--","-")+"\n");
+                    else output+=(new_transit[i]+"\n");
+                }
+                
                 output+="\n@enduml";
                 document.getElementById("inflated").value = output;
             }
+            
         });
     };
     function add_key_attr(){
