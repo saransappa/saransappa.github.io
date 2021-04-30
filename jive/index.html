@@ -121,15 +121,20 @@ function compress(s) {
                 keyAttributesUnfiltered.pop();
                 var temp_set = new Set(keyAttributesUnfiltered);
                 var keyAttributes = Array.from(temp_set);
-                
+                var final_state= curr_state;
                 for(i=0;i<keyAttributes.length;i++){
                     if(i==keyAttributes.length-1)curr_state+="null";
                     else curr_state+="null ";
                 }
                 states.add(curr_state);
                 //console.log(keyAttributes);
+                var dict ={};
                 while(1){
                     try{
+                        if(results.data[i][3].includes("Method Call")){
+                            curr_method = results.data[i][5].split("#")[1];
+                            console.log(curr_method);
+                        }
                         if(results.data[i][3].includes("Field Write")){
                             var k = results.data[i][4].split("=")[1] + "->"+results.data[i][5].split("=")[0];
                             k = k.replace('"',"");
@@ -147,7 +152,17 @@ function compress(s) {
                                     temp_arr[attribute_index] = temp;
                                     next_state = temp_arr.join(" ");
                                 }
-                                var transit = (curr_state+" --> "+next_state+"\n"); 
+                                var transit = (curr_state+" --> "+next_state+"\n");
+                                found = false;
+                                for(var key in dict){
+                                    if(key==transit)found = true;
+                                } 
+                                if(!found){
+                                    dict[transit] = 1;
+                                }
+                                else{
+                                    dict[transit]+=1;
+                                }
                                 if(!transitions.has(transit)){
                                     
                                     transitions.add(transit);
@@ -160,6 +175,7 @@ function compress(s) {
                                     states.add(next_state);
                                     //console.log(states);
                                 }
+                                final_state = curr_state;
                             }
                         }
                         i++;
@@ -175,18 +191,23 @@ function compress(s) {
                     var x = transit_arr[i].split(" --> ");
                     var a = state_arr.indexOf(x[0]);
                     var b = state_arr.indexOf(x[1].replace("\n",""));
-                    new_transit.push(a.toString() + " --> "+b.toString());
+                    new_transit.push(a.toString() + " --> "+b.toString()+" : "+dict[transit_arr[i]].toString());
                 }
                 for(i = 0;i<state_arr.length;i++){
-                    output+=("state \""+state_arr[i]+"\" as "+i+"\n");
+                    if(final_state==state_arr[i]) output+=("state \""+state_arr[i]+"\" as "+i+" #red\n");
+                    else output+=("state \""+state_arr[i]+"\" as "+i+"\n");
                 }
+                //const final_transit = Array.from(new_transit);
+                output+="[*] --> 0 : Start\n";
                 for(i = 0;i<new_transit.length;i++){
                     /*
                         Horizontal growth for even number transition 
                         Vertical growth for odd number transition 
                     */
-                    if(i%2==0)output+=(new_transit[i].replace("--","-")+"\n");
-                    else output+=(new_transit[i]+"\n");
+                    //if(!new_transit[i].includes("NaN")){
+                        if(i%5==0)output+=(new_transit[i].replace("--","-")+"\n");
+                        else output+=(new_transit[i]+"\n");
+                    //}
                 }
                 
                 output+="\n@enduml";
@@ -230,7 +251,8 @@ function compress(s) {
             <textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
             <br><br>
             <input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
-
+            State with RED color indicated final state.<br>
+            Number on each transition indicates the number of times that transition took place.<br>
             <img id="im" src="" alt="Here Comes the State Diagram">
             </form>            
     </center>
