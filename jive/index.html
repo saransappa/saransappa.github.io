@@ -2,6 +2,7 @@
 <html>
 <head>
 <!--  taken from https://github.com/johan/js-deflate -->
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <script src="rawdeflate.js"></script>
 <script src="plantuml.js" type="text/javascript"></script>
 <script type="text/javascript" src="papaparse.min.js"></script>
@@ -121,19 +122,21 @@ function compress(s) {
                 keyAttributesUnfiltered.pop();
                 var temp_set = new Set(keyAttributesUnfiltered);
                 var keyAttributes = Array.from(temp_set);
-                var final_state= curr_state;
+                
                 for(i=0;i<keyAttributes.length;i++){
                     if(i==keyAttributes.length-1)curr_state+="null";
                     else curr_state+="null ";
                 }
                 states.add(curr_state);
+                var start_state = curr_state;
+                var final_state= curr_state;
                 //console.log(keyAttributes);
                 var dict ={};
                 while(1){
                     try{
                         if(results.data[i][3].includes("Method Call")){
                             curr_method = results.data[i][5].split("#")[1];
-                            console.log(curr_method);
+                            //console.log(curr_method);
                         }
                         if(results.data[i][3].includes("Field Write")){
                             var k = results.data[i][4].split("=")[1] + "->"+results.data[i][5].split("=")[0];
@@ -186,6 +189,7 @@ function compress(s) {
                 }
                 var state_arr = Array.from(states);
                 const transit_arr = Array.from(transitions);
+                draw(state_arr,transit_arr,start_state,final_state,dict)
                 var new_transit = [];
                 for(i=0;i<transit_arr.length;i++){
                     var x = transit_arr[i].split(" --> ");
@@ -211,7 +215,7 @@ function compress(s) {
                 }
                 
                 output+="\n@enduml";
-                document.getElementById("inflated").value = output;
+                //document.getElementById("inflated").value = output;
             }
             
         });
@@ -228,6 +232,45 @@ function compress(s) {
             select1.remove(0);
         }
     };
+
+    function draw(states,transitions,start_state,final_state,dict){
+        var temp_state_arr = [];
+        for(i=0;i<states.length;i++){
+            if(states[i]!=final_state && states[i]!=start_state)temp_state_arr.push({id:i, label: states[i]});
+            else if(states[i]==start_state)temp_state_arr.push({id:i, label: states[i], color:{background:"green"},});
+            else temp_state_arr.push({id:i, label: states[i], color:{background:"red"},});
+        }
+        var nodes = new vis.DataSet(temp_state_arr);
+        var temp_transit_arr = [];
+        for(i=0;i<transitions.length;i++){
+            var x = transitions[i].split(" --> ");
+            var a = states.indexOf(x[0]);
+            var b = states.indexOf(x[1].replace("\n",""));
+            temp_transit_arr.push({from: a, to: b, label: dict[transitions[i]].toString(), arrows:"to"});
+        }
+        console.log(temp_transit_arr);        
+        // create an array with edges
+        var edges = new vis.DataSet(temp_transit_arr);
+
+        // create a network
+        var container = document.getElementById('mynetwork');
+
+        // provide the data in the vis format
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {
+            autoResize: true,
+            height: '100%',
+            width: '100%',
+            locale: 'en'
+        };
+
+        // initialize your network!
+        var network = new vis.Network(container, data, options);
+        window.scrollBy(0,800); 
+    }
 </script>
 </head>
 
@@ -247,13 +290,14 @@ function compress(s) {
             <br>
             <input type=submit value = "Trace" onclick="trace();return false;"></p>
             
-            <br><br>
-            <textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>
-            <br><br>
-            <input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>
-            State with RED color indicated final state.<br>
-            Number on each transition indicates the number of times that transition took place.<br>
-            <img id="im" src="" alt="Here Comes the State Diagram">
+            <!--<textarea id="inflated" cols="64" rows="16" name="umlarea"></textarea>-->
+            <!--<input type=submit value = "Draw" onclick="compress($('inflated').value);return false;"></p>-->
+            <p>State with <span style="color:green">GREEN</span> color indicated final state.</p>
+            <p>State with <span style="color:red">RED</span> color indicated final state.</p>
+            <p>Number on each transition indicates the number of times that transition took place.</p><br>
+            <div id="mynetwork" style="height:900px;width:1500px;border-width:3px" ></div>
+            
+            <!--<img id="im" src="" alt="Here Comes the State Diagram">-->
             </form>            
     </center>
 </body>
