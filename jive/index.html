@@ -159,7 +159,7 @@ function compress(s) {
                 while(1){
                     try{
                         if(results.data[i][3].includes("Method Call")){
-                            console.log(results.data[i][4]);
+                            //console.log(results.data[i][4]);
                             var temp1 = results.data[i][4].split("=")[1];
                             var caller = temp1.split("#")[0];
                             var temp2 = results.data[i][5].split("=")[1];
@@ -168,13 +168,13 @@ function compress(s) {
                             //if(!participants.has(caller)){
                             //    participants.add(caller);
                             //}
-                            console.log("-----"+method);
+                            //console.log("-----"+method);
                             caller_stack.push(caller);
                             seq_diagram+= '"'+caller + '"'+" -> " +'"'+ called_to +'"'+ " : "+'"'+method +'"'+ "\n";
                             seq_diagram+= "activate "+'"'+called_to+'"'+"#77CCFF \n";
                         }
                         if(results.data[i][3].includes("Method Exit")){
-                            console.log(results.data[i][4]);1
+                            //console.log(results.data[i][4]);1
                             var temp = results.data[i][4].split("=")[1];
                             var returner = temp.split("#")[0];
                             var value = results.data[i][5].split("=")[1].replace('"','')
@@ -259,7 +259,7 @@ function compress(s) {
                 seq_diagram+="@enduml";
                 output+="\n@enduml";
                 //console.log(output);
-                console.log(seq_diagram);
+                //console.log(seq_diagram);
                 document.getElementById("inflated").value = seq_diagram;
             }
             
@@ -293,7 +293,7 @@ function compress(s) {
             var b = states.indexOf(x[1].replace("\n",""));
             temp_transit_arr.push({from: a, to: b, label: dict[transitions[i]].toString(), arrows:"to"});
         }
-        console.log(temp_transit_arr);        
+        //console.log(temp_transit_arr);        
         // create an array with edges
         var edges = new vis.DataSet(temp_transit_arr);
 
